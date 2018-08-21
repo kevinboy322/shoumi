@@ -6,7 +6,64 @@
 # https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
+import urllib
+import random
+from bs4 import BeautifulSoup
 
+
+class ProxyMiddleware(object):
+    # 接口获取代理IP
+    def get_random_ip(self):
+        # order是订单号或者序列号
+        order = "xxxxxxxxxxxxxxxxxxx"
+        APIurl = "http://xxxxxxxxxxxxxxxxxxxx" + order + ".html"
+        res = urllib.request.urlopen(APIurl).read().decode("utf-8")
+        IPs = res.split("\n")
+        proxyip = random.choices(IPs)
+        # print(proxyip)
+        return 'http://' + proxyip
+
+    # def process_request(self, request, spider):
+    #     ip = self.get_random_ip()
+    #     print("Current IP:Port is %s" % ip)
+    #     request.meta['proxy'] = ip
+    #
+    # def process_response(self, request, response, spider):
+    #     return response
+
+    def process_request(self, request, spider):
+        ip = random.choice(self.getIp())
+        print("Current IP:Port is %s" % ip)
+        request.meta['proxy'] = "http://"+ip
+
+    # 爬取可用代理ip
+    def getIp(self):
+        Ips = []
+        # num = random.randint(1, 2)
+        xiciUrl = 'http://www.xicidaili.com/nn/1'
+        # kuaidailiUrl = 'https://www.kuaidaili.com/free/inha/1'
+        header = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'
+        headers = {'User-agent': header}
+        request = urllib.request.Request(xiciUrl, headers=headers)
+        content = urllib.request.urlopen(request).read()
+        bs = BeautifulSoup(content, "html.parser")
+        res = bs.find_all('tr')
+        for item in res:
+            try:
+                tds = item.find_all('td')
+                ip = tds[1].text
+                port = tds[2].text
+                server = ip + ":" + str(port)
+                proxy_handler = urllib.request.ProxyHandler({"http": server})
+                opener = urllib.request.build_opener(proxy_handler)
+                urllib.request.install_opener(opener)
+                html = urllib.request.urlopen('http://live.titan007.com/')
+                if (html.status == 200):
+                    Ips.append(server)
+                    return Ips
+            except:
+                pass
+        return Ips
 
 class FootballSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,

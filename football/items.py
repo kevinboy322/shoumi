@@ -9,6 +9,8 @@ import scrapy
 
 
 class FootballItem(scrapy.Item):
-    # define the fields for your item here like:
-    name = scrapy.Field()
-    pass
+    matchId = scrapy.Field()
+    dachuzhu = scrapy.Field()
+    dachupan = scrapy.Field()
+    dachuke = scrapy.Field()
+    yapan = scrapy.Field()
