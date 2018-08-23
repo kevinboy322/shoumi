@@ -7,34 +7,65 @@
 
 from scrapy import signals
 import urllib
-import random
-from bs4 import BeautifulSoup
-
+import pymysql
 
 class ProxyMiddleware(object):
+    def __init__(self):
+        self.client = pymysql.connect(
+            host='127.0.0.1',
+            port=3306,
+            user='root',  #使用自己的用户名
+            passwd='root',  # 使用自己的密码
+            db='ceshi',  # 数据库名
+            charset='utf8'
+        )
+        self.cur = self.client.cursor()
+
     # 接口获取代理IP
-    def get_random_ip(self):
-        # order是订单号或者序列号
-        order = "xxxxxxxxxxxxxxxxxxx"
-        APIurl = "http://xxxxxxxxxxxxxxxxxxxx" + order + ".html"
+    def get_get_ip(self):
+        APIurl = "http://dev.kdlapi.com/api/getproxy/?orderid=973500483852076&num=100&area=%E5%9B%BD%E5%86%85&b_pcchrome=1&b_pcie=1&b_pcff=1&protocol=1&method=2&an_an=1&an_ha=1&sp1=1&sp2=1&sep=1"
         res = urllib.request.urlopen(APIurl).read().decode("utf-8")
         IPs = res.split("\n")
-        proxyip = random.choices(IPs)
-        # print(proxyip)
-        return 'http://' + proxyip
+        # 入库
+        for a in IPs:
+            try:
+                proxy_handler = urllib.request.ProxyHandler({"http": a})
+                opener = urllib.request.build_opener(proxy_handler)
+                urllib.request.install_opener(opener)
+                html = urllib.request.urlopen('http://live.titan007.com/', timeout=1)
+                if (html.status == 200):
+                    sql = 'insert into ips(ip) VALUES (%s)'
+                    lis = (a)
+                    self.cur.execute(sql, lis)
+                    self.client.commit()
+                else:
+                    continue
+            except:
+                continue
 
-    # def process_request(self, request, spider):
-    #     ip = self.get_random_ip()
-    #     print("Current IP:Port is %s" % ip)
-    #     request.meta['proxy'] = ip
-    #
-    # def process_response(self, request, response, spider):
-    #     return response
+
+
+    def get_random_ip(self):
+        try:
+            sql = 'select * from ips'
+            self.cur.execute(sql)
+            result = self.cur.fetchone()
+            if result:
+                pass
+            else:
+                self.get_get_ip()
+            # 删除该条
+            del_sql = 'delete from ips where id=%s'
+            val = (result[0])
+            self.cur.execute(del_sql,val)
+            self.client.commit()
+            return 'http://' + result[1]
+        except:
+            return ''
 
     def process_request(self, request, spider):
-        ip = random.choice(self.getIp())
-        print("Current IP:Port is %s" % ip)
-        request.meta['proxy'] = "http://"+ip
+        ip = self.get_random_ip()
+        request.meta['proxy'] = ip
 
     # 爬取可用代理ip
     def getIp(self):

@@ -10,9 +10,9 @@ class FootballPipeline(object):
     def __init__(self):
         self.wb = Workbook()
         self.ws = self.wb.active
-        self.ws.append(['matchId','yapan','dachuzhu','dachupan','dachuke'])
+        self.ws.append(['matchId','company','yachuzhu','yachupan','yachuke','yazhunzhu','yazhunpan','yazhunke','dachuzhu','dachupan','dachuke','dazhunzhu','dazhunpan','dazhunke'])
     def process_item(self, item, spider):
-        line = [item['matchId'],item['yapan'],item['dachuzhu'],item['dachupan'],item['dachuke']]
+        line = [item['matchId'],item['company'],item['yachuzhu'],item['yachupan'],item['yachuke'],item['yazhunzhu'],item['yazhunpan'],item['yazhunke'],item['dachuzhu'],item['dachupan'],item['dachuke'],item['dazhunzhu'],item['dazhunpan'],item['dazhunke']]
         self.ws.append(line)
-        self.wb.save('data.xlsx')
+        self.wb.save('d://shoumi.xlsx')
         return item
